@@ -55,8 +55,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-bold text-white">Account aanmaken</h1>
+    <div className="mx-auto max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h1 className="mb-4 text-xl font-extrabold tracking-tight text-gray-900">
+        Account aanmaken
+      </h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="text"
@@ -64,7 +66,7 @@ export default function RegisterPage() {
           placeholder="Naam"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-md border border-white/10 bg-club-gray px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-club-red focus:outline-none"
+          className="rounded-xl border-0 bg-gray-100 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-club-red/40"
         />
         <input
           type="email"
@@ -72,7 +74,7 @@ export default function RegisterPage() {
           placeholder="E-mailadres"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-white/10 bg-club-gray px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-club-red focus:outline-none"
+          className="rounded-xl border-0 bg-gray-100 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-club-red/40"
         />
         <input
           type="password"
@@ -80,20 +82,20 @@ export default function RegisterPage() {
           placeholder="Wachtwoord (min. 6 tekens)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-md border border-white/10 bg-club-gray px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-club-red focus:outline-none"
+          className="rounded-xl border-0 bg-gray-100 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-club-red/40"
         />
         {error && <p className="text-sm text-club-red">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="rounded-md bg-club-red px-3 py-2 text-sm font-semibold text-white hover:bg-club-red-dark disabled:opacity-50"
+          className="rounded-full bg-club-red px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-club-red-dark disabled:opacity-50"
         >
           {loading ? "Bezig..." : "Account aanmaken"}
         </button>
       </form>
-      <p className="mt-4 text-sm text-gray-400">
+      <p className="mt-4 text-sm text-gray-500">
         Al een account?{" "}
-        <Link href="/login" className="text-club-red underline">
+        <Link href="/login" className="font-medium text-club-red hover:underline">
           Log hier in
         </Link>
       </p>

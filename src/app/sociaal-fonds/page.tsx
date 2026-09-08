@@ -9,14 +9,16 @@ export default function SociaalFondsPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-bold text-white">Sociaal Fonds</h1>
-      <p className="mb-4 text-sm text-gray-400">
+      <h1 className="mb-1 text-xl font-extrabold tracking-tight text-gray-900">
+        Sociaal Fonds
+      </h1>
+      <p className="mb-4 text-sm text-gray-500">
         Samen zorgen we voor supporters die het even moeilijk hebben. Bekijk
         de lopende acties en de voortgang.
       </p>
 
-      <div className="mb-4 rounded-lg border border-club-red bg-club-gray p-4">
-        <p className="text-sm text-gray-300">Totaal opgehaald dit jaar</p>
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <p className="text-sm text-gray-500">Totaal opgehaald dit jaar</p>
         <p className="text-2xl font-bold text-club-red">
           {new Intl.NumberFormat("nl-NL", {
             style: "currency",

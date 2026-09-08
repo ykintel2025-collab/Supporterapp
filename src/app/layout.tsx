@@ -33,10 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl">
-      <body className="min-h-screen bg-club-black font-sans text-white">
+      <body className="min-h-screen bg-[#f7f7f8] font-sans text-gray-900">
         <AuthProvider>
           <Navbar />
-          <main className="mx-auto max-w-2xl px-4 pb-16 pt-4">{children}</main>
+          <main className="mx-auto max-w-2xl px-4 pb-16 pt-6">{children}</main>
         </AuthProvider>
       </body>
     </html>

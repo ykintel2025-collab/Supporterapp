@@ -17,8 +17,8 @@ export default function PostComposer() {
 
   if (!user || !profile) {
     return (
-      <div className="mb-4 rounded-lg border border-white/10 bg-club-gray p-4 text-center text-sm text-gray-300">
-        <a href="/login" className="font-semibold text-club-red underline">
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-600 shadow-sm">
+        <a href="/login" className="font-semibold text-club-red hover:underline">
           Log in
         </a>{" "}
         om iets te delen met de supporters.
@@ -86,7 +86,7 @@ export default function PostComposer() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-4 rounded-lg border border-white/10 bg-club-gray p-4"
+      className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
     >
       <div className="flex gap-3">
         <Avatar name={profile.displayName} />
@@ -95,19 +95,19 @@ export default function PostComposer() {
           onChange={(e) => setText(e.target.value)}
           placeholder="Wat wil je delen met de supporters?"
           rows={2}
-          className="flex-1 resize-none rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-club-red focus:outline-none"
+          className="flex-1 resize-none rounded-xl border-0 bg-gray-100 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-club-red/40"
         />
       </div>
 
       {file && (
-        <p className="ml-[52px] mt-2 text-xs text-gray-400">
+        <p className="ml-[52px] mt-2 text-xs text-gray-500">
           Geselecteerd: {file.name}
         </p>
       )}
       {error && <p className="ml-[52px] mt-2 text-xs text-club-red">{error}</p>}
 
       <div className="ml-[52px] mt-3 flex items-center justify-between">
-        <label className="cursor-pointer text-sm font-medium text-gray-300 hover:text-club-red">
+        <label className="cursor-pointer text-sm font-medium text-gray-600 hover:text-club-red">
           📷 Foto/video toevoegen
           <input
             ref={fileInputRef}
@@ -120,7 +120,7 @@ export default function PostComposer() {
         <button
           type="submit"
           disabled={posting || (!text.trim() && !file)}
-          className="rounded-md bg-club-red px-4 py-1.5 text-sm font-semibold text-white hover:bg-club-red-dark disabled:opacity-40"
+          className="rounded-full bg-club-red px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-club-red-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           {posting ? "Plaatsen..." : "Plaatsen"}
         </button>

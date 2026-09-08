@@ -52,12 +52,12 @@ export default function Feed() {
   }
 
   if (posts === null) {
-    return <p className="py-8 text-center text-sm text-gray-400">Laden...</p>;
+    return <p className="py-8 text-center text-sm text-gray-500">Laden...</p>;
   }
 
   if (posts.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-gray-400">
+      <p className="py-8 text-center text-sm text-gray-500">
         Nog geen berichten. Wees de eerste die iets deelt!
       </p>
     );
