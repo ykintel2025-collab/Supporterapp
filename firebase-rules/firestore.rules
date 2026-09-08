@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Plak dit bestand in: Firebase Console > Firestore Database > Rules > Publiceren.
+//
+// Logica:
+// - Iedereen (ook niet-ingelogd) mag de feed lezen.
+// - Alleen ingelogde gebruikers mogen posten, en alleen als zichzelf als auteur.
+// - Een post verwijderen/aanpassen mag de auteur zelf, of iemand met rol "bestuur".
+// - Het "users"-document (naam, e-mail, rol) mag je alleen zelf aanmaken en
+//   updaten, tenzij je bestuurslid bent (dan mag je ook andermans rol wijzigen
+//   via het Bestuur-dashboard).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isBestuur() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'bestuur';
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isBestuur());
+      allow delete: if false;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() &&
+        (resource.data.authorId == request.auth.uid || isBestuur());
+      allow delete: if isSignedIn() &&
+        (resource.data.authorId == request.auth.uid || isBestuur());
+    }
+  }
+}

@@ -1,94 +1,102 @@
 "use client";
 
-import { useState } from "react";
-import { mockPosts } from "@/lib/mockData";
-import { Post } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
+import Avatar from "@/components/Avatar";
 
-// Let op: dit is een voorbeeld-dashboard met lokale state (mockdata).
-// De goedkeur/afwijs-knoppen wijzigen alleen de data in de browser, niet in
-// Firestore. Zodra je Firestore aansluit, vervang je dit door een update op
-// het post-document (bijv. updateDoc(doc(db, "posts", post.id), { approved: true })).
+interface MemberRow {
+  id: string;
+  displayName: string;
+  email: string;
+  role: "lid" | "bestuur";
+}
 
 export default function BestuurPage() {
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const { user, profile, loading } = useAuth();
+  const [members, setMembers] = useState<MemberRow[] | null>(null);
 
-  function setApproval(id: string, approved: boolean) {
-    setPosts((current) =>
-      current.map((post) => (post.id === id ? { ...post, approved } : post))
+  useEffect(() => {
+    if (profile?.role !== "bestuur" || !db) return;
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      setMembers(
+        snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as Omit<MemberRow, "id">;
+          return { id: docSnap.id, ...data };
+        })
+      );
+    });
+    return unsubscribe;
+  }, [profile]);
+
+  async function toggleRole(memberId: string, currentRole: "lid" | "bestuur") {
+    if (!db) return;
+    await updateDoc(doc(db, "users", memberId), {
+      role: currentRole === "bestuur" ? "lid" : "bestuur",
+    });
+  }
+
+  if (loading) {
+    return <p className="text-sm text-gray-400">Laden...</p>;
+  }
+
+  if (!user) {
+    return (
+      <p className="text-sm text-gray-400">
+        Log in om het bestuur-dashboard te bekijken.
+      </p>
     );
   }
 
-  const pending = posts.filter((post) => !post.approved);
-  const approved = posts.filter((post) => post.approved);
+  if (profile?.role !== "bestuur") {
+    return (
+      <p className="text-sm text-gray-400">
+        Dit dashboard is alleen zichtbaar voor bestuursleden.
+      </p>
+    );
+  }
 
   return (
     <div>
       <h1 className="mb-1 text-xl font-bold text-white">Bestuur Dashboard</h1>
       <p className="mb-4 text-sm text-gray-400">
-        Modereer binnenkomende berichten voordat ze in de Home Feed
-        verschijnen.
+        Berichten van leden verwijder je direct in de Home Feed — als
+        bestuurslid zie je daar bij elk bericht een &quot;Verwijderen&quot;-knop.
+        Hieronder beheer je de leden.
       </p>
 
-      <section className="mb-6">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-club-red">
-          Te beoordelen ({pending.length})
-        </h2>
-        {pending.length === 0 ? (
-          <p className="text-sm text-gray-500">Niets om te beoordelen.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {pending.map((post) => (
-              <div
-                key={post.id}
-                className="rounded-lg border border-white/10 bg-club-gray p-4"
-              >
-                <h3 className="mb-1 font-bold text-white">{post.title}</h3>
-                <p className="mb-3 text-sm text-gray-300">{post.content}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setApproval(post.id, true)}
-                    className="rounded-md bg-club-red px-3 py-1.5 text-sm font-semibold text-white hover:bg-club-red-dark"
-                  >
-                    Goedkeuren
-                  </button>
-                  <button
-                    onClick={() =>
-                      setPosts((current) =>
-                        current.filter((p) => p.id !== post.id)
-                      )
-                    }
-                    className="rounded-md border border-white/20 px-3 py-1.5 text-sm font-semibold text-gray-300 hover:bg-white/10"
-                  >
-                    Afwijzen
-                  </button>
-                </div>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-club-red">
+        Leden ({members?.length ?? 0})
+      </h2>
+      <div className="flex flex-col gap-2">
+        {members?.map((member) => (
+          <div
+            key={member.id}
+            className="flex items-center justify-between rounded-md border border-white/10 bg-club-gray px-3 py-2"
+          >
+            <div className="flex items-center gap-2">
+              <Avatar name={member.displayName} size={32} />
+              <div>
+                <p className="text-sm font-medium text-white">
+                  {member.displayName}
+                </p>
+                <p className="text-xs text-gray-500">{member.email}</p>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-400">
-          Gepubliceerd ({approved.length})
-        </h2>
-        <div className="flex flex-col gap-2">
-          {approved.map((post) => (
-            <div
-              key={post.id}
-              className="flex items-center justify-between rounded-md border border-white/10 bg-club-gray/50 px-3 py-2"
-            >
-              <span className="text-sm text-gray-200">{post.title}</span>
-              <button
-                onClick={() => setApproval(post.id, false)}
-                className="text-xs text-gray-400 underline hover:text-club-red"
-              >
-                Intrekken
-              </button>
             </div>
-          ))}
-        </div>
-      </section>
+            <button
+              onClick={() => toggleRole(member.id, member.role)}
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                member.role === "bestuur"
+                  ? "bg-club-red text-white"
+                  : "border border-white/20 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              {member.role === "bestuur" ? "Bestuur" : "Maak bestuur"}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

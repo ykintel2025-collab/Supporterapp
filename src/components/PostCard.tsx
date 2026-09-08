@@ -1,37 +1,95 @@
-import { Post } from "@/lib/types";
+"use client";
 
-const typeLabels: Record<Post["type"], string> = {
-  mededeling: "Mededeling",
-  sociaal: "Sociaal Fonds",
-  sponsor: "Sponsor",
-};
+import { doc, arrayRemove, arrayUnion, deleteDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
+import { FirestorePost } from "@/lib/types";
+import { formatRelativeTime } from "@/lib/time";
+import Avatar from "./Avatar";
 
-const typeStyles: Record<Post["type"], string> = {
-  mededeling: "bg-club-red text-white",
-  sociaal: "bg-white text-club-black",
-  sponsor: "bg-club-gray text-club-red border border-club-red",
-};
+export default function PostCard({ post }: { post: FirestorePost }) {
+  const { user, profile } = useAuth();
 
-export default function PostCard({ post }: { post: Post }) {
-  const formattedDate = new Date(post.date).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const liked = user ? post.likes.includes(user.uid) : false;
+  const canDelete =
+    !!user && (user.uid === post.authorId || profile?.role === "bestuur");
+
+  async function toggleLike() {
+    if (!user || !db) return;
+    const postRef = doc(db, "posts", post.id);
+    await updateDoc(postRef, {
+      likes: liked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+    });
+  }
+
+  async function handleDelete() {
+    if (!canDelete || !db) return;
+    if (!confirm("Weet je zeker dat je dit bericht wilt verwijderen?")) return;
+    // Verwijdert het bericht uit Firestore. De media zelf blijft (onschadelijk)
+    // in Cloudinary staan — dat verwijderen vereist een ondertekend verzoek
+    // met je Cloudinary API-secret, wat niet veilig kan vanuit de browser.
+    // Zie README (Fase 2) voor een opzet met een klein backend-functie hiervoor.
+    await deleteDoc(doc(db, "posts", post.id));
+  }
 
   return (
     <article className="rounded-lg border border-white/10 bg-club-gray p-4 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${typeStyles[post.type]}`}
-        >
-          {typeLabels[post.type]}
-        </span>
-        <time className="text-xs text-gray-400">{formattedDate}</time>
+      <div className="mb-2 flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <Avatar name={post.authorName} size={36} />
+          <div>
+            <p className="text-sm font-semibold text-white">{post.authorName}</p>
+            <p className="text-xs text-gray-500">
+              {post.createdAt ? formatRelativeTime(post.createdAt) : "zojuist"}
+            </p>
+          </div>
+        </div>
+        {canDelete && (
+          <button
+            onClick={handleDelete}
+            className="text-xs text-gray-500 hover:text-club-red"
+          >
+            Verwijderen
+          </button>
+        )}
       </div>
-      <h3 className="mb-1 text-base font-bold text-white">{post.title}</h3>
-      <p className="text-sm leading-relaxed text-gray-300">{post.content}</p>
-      <p className="mt-2 text-xs text-gray-500">Geplaatst door {post.author}</p>
+
+      {post.text && (
+        <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">
+          {post.text}
+        </p>
+      )}
+
+      {post.mediaUrl && post.mediaType === "image" && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={post.mediaUrl}
+          alt=""
+          className="mb-3 max-h-[480px] w-full rounded-md object-cover"
+        />
+      )}
+      {post.mediaUrl && post.mediaType === "video" && (
+        <video
+          src={post.mediaUrl}
+          controls
+          className="mb-3 max-h-[480px] w-full rounded-md bg-black"
+        />
+      )}
+
+      <button
+        onClick={toggleLike}
+        disabled={!user}
+        className={`flex items-center gap-1 text-sm font-medium ${
+          liked ? "text-club-red" : "text-gray-400 hover:text-club-red"
+        } disabled:cursor-not-allowed disabled:opacity-50`}
+      >
+        <span>{liked ? "♥" : "♡"}</span>
+        <span>
+          {post.likes.length > 0
+            ? `${post.likes.length} vind${post.likes.length === 1 ? "t" : "en"} dit leuk`
+            : "Vind ik leuk"}
+        </span>
+      </button>
     </article>
   );
 }

@@ -1,13 +1,18 @@
-export type PostType = "mededeling" | "sociaal" | "sponsor";
-
-export interface Post {
+export interface FirestorePost {
   id: string;
-  type: PostType;
-  title: string;
-  content: string;
-  author: string;
-  date: string; // ISO date string
-  approved: boolean;
+  authorId: string;
+  authorName: string;
+  text: string;
+  mediaUrl: string | null;
+  mediaType: "image" | "video" | null;
+  likes: string[];
+  createdAt: Date | null;
+}
+
+export interface UserProfile {
+  displayName: string;
+  email: string;
+  role: "lid" | "bestuur";
 }
 
 export interface DonationGoal {

@@ -1,15 +1,15 @@
 import Feed from "@/components/Feed";
-import { mockPosts } from "@/lib/mockData";
+import PostComposer from "@/components/PostComposer";
 
 export default function HomePage() {
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold text-white">Home Feed</h1>
+      <h1 className="mb-1 text-xl font-bold text-white">Home Feed</h1>
       <p className="mb-4 text-sm text-gray-400">
-        Mededelingen, nieuws over het Sociaal Fonds en sponsoracties van het
-        Amsterdams Supporters Fonds.
+        Deel updates, foto&apos;s en video&apos;s met de andere supporters.
       </p>
-      <Feed posts={mockPosts} />
+      <PostComposer />
+      <Feed />
     </div>
   );
 }

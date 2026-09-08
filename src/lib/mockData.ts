@@ -1,40 +1,9 @@
-import { DonationGoal, Post } from "./types";
+import { DonationGoal } from "./types";
 
-// Dit is voorbeelddata zodat de app direct werkt zonder Firestore in te richten.
-// Vervang dit later door echte data uit Firestore (zie src/lib/firebase.ts).
-
-export const mockPosts: Post[] = [
-  {
-    id: "1",
-    type: "mededeling",
-    title: "Nieuwe locatie clubhuis bekend",
-    content:
-      "Vanaf volgende maand komen we samen in het nieuwe clubhuis aan de Zuidas. Iedereen is welkom op de openingsavond.",
-    author: "Bestuur",
-    date: "2026-09-01",
-    approved: true,
-  },
-  {
-    id: "2",
-    type: "sociaal",
-    title: "Actie voor gezin uit onze supportersgroep",
-    content:
-      "Een van onze leden zit tijdelijk zonder inkomen. Via het Sociaal Fonds halen we geld op om te ondersteunen.",
-    author: "Sociaal Fonds",
-    date: "2026-08-28",
-    approved: true,
-  },
-  {
-    id: "3",
-    type: "sponsor",
-    title: "Café De Kroon nieuwe hoofdsponsor",
-    content:
-      "We heten Café De Kroon van harte welkom als nieuwe hoofdsponsor van het Amsterdams Supporters Fonds.",
-    author: "Bestuur",
-    date: "2026-08-20",
-    approved: true,
-  },
-];
+// Voorbeelddata voor het Sociaal Fonds. De feed op de homepage gebruikt
+// inmiddels echte Firestore-data (zie src/components/Feed.tsx) — dit
+// bestand is nu alleen nog voor de donatiedoelen. Vervang dit later door
+// een Firestore-collectie zodra jullie dat willen (zie README, Fase 2).
 
 export const mockDonationGoals: DonationGoal[] = [
   {
