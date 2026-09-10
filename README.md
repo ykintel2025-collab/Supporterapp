@@ -13,6 +13,9 @@ e-mailverificatie, een volwaardig bestuur-dashboard, "Voor Elkaar" (het
 voormalige Sociaal Fonds) vast bovenaan de homepage, ledenprofielen met een
 ledenoverzicht, en onderlinge privéberichten.
 
+- **Wachtwoord vergeten**: op `/login` staat nu een link "Wachtwoord
+  vergeten?" die (via Firebase Auth) een reset-mail stuurt naar het
+  ingevulde e-mailadres, met een link om een nieuw wachtwoord in te stellen.
 - **E-mailverificatie**: bij registratie sturen we automatisch een
   bevestigingsmail (via Firebase Auth). Het bestuur ziet bij elke
   aanmelding of de e-mail al bevestigd is, als hulpmiddel — goedkeuren kan
@@ -58,6 +61,14 @@ ledenoverzicht, en onderlinge privéberichten.
 - **Onderlinge berichten (DM)**: via een ledenprofiel kun je op "Stuur
   bericht" klikken om een privégesprek te starten. Alle gesprekken staan
   overzichtelijk in de inbox op `/berichten`.
+- **In-app meldingen (badges)**: bij "Berichten" in de menubalk zie je een
+  rood bolletje met het aantal ongelezen gesprekken; ongelezen gesprekken
+  staan ook vetgedrukt met een rode stip in de inbox zelf. Bij "Bestuur"
+  zie je het totaal aantal openstaande aanmeldingen + berichten in de
+  wachtrij, zodat je ook zonder het dashboard te openen ziet dat er iets op
+  je wacht. Dit werkt zolang de app open is (realtime, geen actie nodig) —
+  het zijn bewust géén push-meldingen die ook binnenkomen als de app dicht
+  is; dat vereist een Firebase Blaze-plan (zie hieronder).
 - **WhatsApp-notificaties**: bewust nog niet gebouwd. De officiële WhatsApp
   Business Groups API laat een app alleen eigen, nieuwe groepen aanmaken en
   beheren (max. 8 leden, met kosten per bericht) — niet automatisch posten

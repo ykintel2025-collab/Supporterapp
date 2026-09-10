@@ -12,6 +12,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -129,6 +130,19 @@ export default function GesprekPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Markeer het gesprek als gelezen zodra we het openen (en telkens als er
+  // een nieuw bericht binnenkomt terwijl je erin zit) — dit voedt de
+  // ongelezen-indicator bij "Berichten" in de menubalk.
+  useEffect(() => {
+    if (!db || !user || !conversationId || !conversationReady || messages === null) return;
+    updateDoc(doc(db, "conversations", conversationId), {
+      [`lastReadAt.${user.uid}`]: serverTimestamp(),
+    }).catch(() => {
+      // niet kritiek voor het gesprek zelf
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, conversationReady, user?.uid, messages]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!text.trim() || !user || !profile || !db || !conversationId || !otherId || !otherMember)
@@ -151,6 +165,7 @@ export default function GesprekPage() {
           },
           lastMessage: text.trim(),
           lastMessageAt: serverTimestamp(),
+          lastMessageSenderId: user.uid,
         },
         { merge: true }
       );

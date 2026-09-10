@@ -33,6 +33,10 @@ export interface Conversation {
   participantPhotoURLs: Record<string, string | null>;
   lastMessage: string;
   lastMessageAt: Date | null;
+  lastMessageSenderId?: string | null;
+  // Per gebruiker het moment waarop die het gesprek voor het laatst heeft
+  // geopend — gebruikt om "ongelezen"-indicators te tonen (zie Navbar.tsx).
+  lastReadAt?: Record<string, Date | null>;
 }
 
 export interface ChatMessage {

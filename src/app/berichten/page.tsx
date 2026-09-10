@@ -32,6 +32,14 @@ export default function BerichtenPage() {
           participantPhotoURLs: data.participantPhotoURLs ?? {},
           lastMessage: data.lastMessage ?? "",
           lastMessageAt: data.lastMessageAt?.toDate ? data.lastMessageAt.toDate() : null,
+          lastMessageSenderId: data.lastMessageSenderId ?? null,
+          lastReadAt: data.lastReadAt
+            ? Object.fromEntries(
+                Object.entries(data.lastReadAt as Record<string, { toDate?: () => Date }>).map(
+                  ([uid, ts]) => [uid, ts?.toDate ? ts.toDate() : null]
+                )
+              )
+            : {},
         } as Conversation;
       });
       list.sort((a, b) => {
@@ -86,19 +94,37 @@ export default function BerichtenPage() {
           const otherId = conv.participantIds.find((id) => id !== user.uid) ?? "";
           const otherName = conv.participantNames[otherId] ?? "Onbekend lid";
           const otherPhoto = conv.participantPhotoURLs?.[otherId] ?? null;
+          const lastReadAt = conv.lastReadAt?.[user.uid] ?? null;
+          const isUnread =
+            !!conv.lastMessageAt &&
+            conv.lastMessageSenderId !== user.uid &&
+            (!lastReadAt || conv.lastMessageAt > lastReadAt);
           return (
             <Link
               key={conv.id}
               href={`/berichten/${otherId}`}
-              className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-3.5 py-3 shadow-sm transition hover:border-club-red/30 hover:shadow"
+              className={`flex items-center gap-3 rounded-2xl border bg-white px-3.5 py-3 shadow-sm transition hover:border-club-red/30 hover:shadow ${
+                isUnread ? "border-club-red/40" : "border-gray-200"
+              }`}
             >
               <Avatar name={otherName} photoURL={otherPhoto} size={40} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900">{otherName}</p>
-                <p className="truncate text-xs text-gray-500">
+                <p
+                  className={`text-sm ${
+                    isUnread ? "font-bold text-gray-900" : "font-semibold text-gray-900"
+                  }`}
+                >
+                  {otherName}
+                </p>
+                <p
+                  className={`truncate text-xs ${
+                    isUnread ? "font-semibold text-gray-800" : "text-gray-500"
+                  }`}
+                >
                   {conv.lastMessage || "Nog geen berichten"}
                 </p>
               </div>
+              {isUnread && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-club-red" />}
               {conv.lastMessageAt && (
                 <span className="shrink-0 text-[11px] text-gray-400">
                   {formatRelativeTime(conv.lastMessageAt)}
