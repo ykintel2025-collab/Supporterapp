@@ -1,6 +1,7 @@
 import Feed from "@/components/Feed";
 import PostComposer from "@/components/PostComposer";
 import VoorElkaarWidget from "@/components/VoorElkaarWidget";
+import SponsorStrip from "@/components/SponsorStrip";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <VoorElkaarWidget />
       <PostComposer />
       <Feed />
+      <SponsorStrip />
     </div>
   );
 }

@@ -45,9 +45,11 @@ export default function Feed() {
         );
         setError(null);
       },
-      () => {
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.error("Feed onSnapshot error:", err.code, err.message);
         setError(
-          "Kan berichten niet laden. Controleer of Firestore is ingericht (zie README)."
+          `Kan berichten niet laden (${err.code}). Controleer of Firestore is ingericht (zie README).`
         );
       }
     );

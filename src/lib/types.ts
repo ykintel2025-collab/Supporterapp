@@ -20,6 +20,10 @@ export interface UserProfile {
   emailVerified: boolean;
   bio?: string;
   photoURL?: string | null;
+  // Lidmaatschapsbijdrage — voorlopig handmatig bijgehouden door het bestuur
+  // (zie src/lib/config.ts), tot er een betaalprovider is gekoppeld.
+  membershipFee?: number;
+  membershipPaid?: boolean;
 }
 
 export interface MemberProfile extends UserProfile {
@@ -52,4 +56,12 @@ export interface DonationGoal {
   description: string;
   targetAmount: number;
   raisedAmount: number;
+}
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  linkUrl: string;
+  active: boolean;
 }

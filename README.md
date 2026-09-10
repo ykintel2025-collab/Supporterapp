@@ -75,6 +75,29 @@ ledenoverzicht, en onderlinge privéberichten.
   in een bestaande WhatsApp-groep van de club. Mocht je dit later alsnog
   willen, dan is de meest haalbare route een WhatsApp-kanaal (Channel) of
   een korte handmatige melding; laat het weten als je dit wilt uitwerken.
+- **Sponsorbanners**: nieuw tabblad **Bestuur → Sponsoren** om bedrijven toe
+  te voegen (naam, logo, link). Actieve sponsoren verschijnen als klikbare
+  banner onderaan de Home Feed. De betaling met de sponsor (bijv. een
+  factuur) regelt het bestuur zelf buiten de app om — dit onderdeel gaat
+  alleen over de zichtbaarheid in de app.
+- **Lidmaatschapsbijdrage (handmatig, voorlopig)**: nieuwe leden zien bij
+  registratie de bijdrage (nu €12/jaar, in te stellen in
+  `src/lib/config.ts`) én betaalinstructies. **Pas die instructies aan** met
+  je eigen IBAN of Tikkie-link, ze staan nu op een placeholder-tekst. Zodra
+  iemand heeft betaald, zet het bestuur dat handmatig op "betaald" bij
+  **Bestuur → Aanmeldingen** of **Leden** — er is nog geen automatische
+  incasso/koppeling, dat komt zodra er een betaalprovider gekozen is (zie
+  Fase 2 hieronder). Dit blokkeert bewust niet de mogelijkheid om te posten
+  — dat blijft alleen gekoppeld aan bestuurlijke goedkeuring.
+- **Bugfix — Firestore-rules gehard**: een tweede testaccount kreeg de
+  melding "Kan berichten niet laden" bij het openen van de Home Feed. Oorzaak:
+  de beveiligingsregels lazen een veld rechtstreeks uit dat op oudere
+  testberichten kon ontbreken, wat de hele regel deed vastlopen in plaats
+  van gewoon "nee" terug te geven. Alle regels gebruiken nu een veilige
+  `.get(veld, standaardwaarde)`-toegang, en de foutmelding in de Feed toont
+  voortaan ook de exacte Firestore-foutcode, zodat een volgend probleem
+  sneller te vinden is. **Dit vereist opnieuw publiceren van de Firestore-
+  rules** (zie Stap 1 hieronder).
 
 **Nog niet inbegrepen (bewust, fase 2):** webshop en betalingen
 (lidmaatschap/merchandise/donaties via bijvoorbeeld Stripe of Mollie), zie
@@ -212,27 +235,35 @@ npm run dev
 
 De app draait dan op http://localhost:3000.
 
-## Fase 2 — Webshop & monetization (later)
+## Fase 2 — Webshop & betalingen (later)
 
-Je gaf aan uiteindelijk lidmaatschap, webshop-verkoop én donaties te willen.
-Concreet volgt dit later, in losse stappen zodra de basis hierboven stabiel
-draait:
+Je gaf aan uiteindelijk lidmaatschap, webshop-verkoop (merchandise/kleding)
+én donaties online te willen kunnen afrekenen. Er is nog geen betaalprovider
+gekozen en nog geen zakelijk account daarvoor geregeld — daarom is dit nog
+niet gebouwd, maar wel al voorbereid: de lidmaatschapsbijdrage wordt nu al
+per lid bijgehouden (zie hierboven, handmatig door het bestuur af te vinken)
+zodat er straks alleen een echte betaalstap achter hoeft te komen, in plaats
+van het hele stuk vanaf nul te bouwen.
+
+Concreet, in losse stappen zodra je zover bent:
 
 1. **Betaalprovider kiezen** (bijv. Stripe of Mollie — Mollie is populair
-   in Nederland en ondersteunt iDEAL rechtstreeks).
+   in Nederland en ondersteunt iDEAL rechtstreeks) en een zakelijk account
+   daar aanmaken (vaak is een KVK-inschrijving nodig).
 2. **Producten/lidmaatschappen** vastleggen in Firestore (naam, prijs,
-   voorraad indien van toepassing), en de donatiedoelen van "Voor Elkaar"
-   (nu nog voorbeelddata) vervangen door een echte Firestore-collectie die
-   het bestuur zelf kan beheren.
-3. **Checkout-flow** bouwen die via de provider een betaling start en het
-   resultaat terugkoppelt (webhook) naar Firestore, bijvoorbeeld om een
-   lidmaatschap te activeren of een donatie aan een "Voor Elkaar"-actie toe
-   te voegen.
+   voorraad indien van toepassing — voor de webshop is merchandise/kleding
+   het startpunt), en de donatiedoelen van "Voor Elkaar" (nu nog
+   voorbeelddata) vervangen door een echte Firestore-collectie die het
+   bestuur zelf kan beheren.
+3. **Checkout-flow** bouwen die via de provider een betaling start. De
+   bevestiging (webhook) vangen we op met een **Vercel API-route** (gratis,
+   geen Firebase Cloud Functions/Blaze-plan nodig) die vervolgens Firestore
+   bijwerkt — bijv. `membershipPaid: true` zetten, een lidmaatschap
+   activeren, of een donatie aan een "Voor Elkaar"-actie toevoegen.
 4. **Media echt verwijderen bij het weghalen van een post** — vereist een
-   kleine backend-functie (bijv. een Vercel API route) die met je
+   kleine backend-functie (ook als Vercel API-route te bouwen) die met je
    Cloudinary API-secret een verwijderverzoek doet; dat secret mag nooit in
    de browser-code staan.
 
-Dit vraagt eerst een besluit van jouw kant (welke provider, welke
-producten/prijzen) — laat het weten zodra je zover bent, dan bouwen we dat
-gericht.
+Laat het weten zodra je een betaalprovider en zakelijk account hebt, dan
+pakken we dit gericht op.

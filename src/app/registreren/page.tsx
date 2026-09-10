@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { MEMBERSHIP_FEE_EUR, MEMBERSHIP_PAYMENT_INSTRUCTIONS } from "@/lib/config";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -54,6 +55,8 @@ export default function RegisterPage() {
         emailVerified: false,
         bio: "",
         photoURL: null,
+        membershipFee: MEMBERSHIP_FEE_EUR,
+        membershipPaid: false,
         createdAt: serverTimestamp(),
       });
       await sendEmailVerification(credential.user);
@@ -97,6 +100,12 @@ export default function RegisterPage() {
           spamfolder). Daarna beoordeelt het bestuur je aanmelding voordat je
           kunt posten.
         </p>
+        <div className="mb-4 rounded-xl bg-gray-50 p-3 text-left text-sm text-gray-700">
+          <p className="mb-1 font-semibold text-gray-900">
+            Lidmaatschapsbijdrage: €{MEMBERSHIP_FEE_EUR} per jaar
+          </p>
+          <p className="text-xs text-gray-600">{MEMBERSHIP_PAYMENT_INSTRUCTIONS}</p>
+        </div>
         {resendMessage && (
           <p className="mb-4 text-xs text-gray-500">{resendMessage}</p>
         )}
