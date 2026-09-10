@@ -27,6 +27,8 @@ export default function GesprekPage() {
     undefined
   );
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [conversationReady, setConversationReady] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,27 +45,85 @@ export default function GesprekPage() {
     return unsubscribe;
   }, [otherId]);
 
+  // Het gesprek-document moet bestaan vóórdat we de berichten-subcollectie
+  // mogen lezen (de rules controleren daar wie de deelnemers zijn). Bij een
+  // gloednieuw gesprek (nog nooit een bericht gestuurd) bestond dat
+  // document nog niet, waardoor het lezen van berichten werd geweigerd en
+  // de pagina eeuwig op "Laden..." bleef staan. Daarom maken/vullen we het
+  // gesprek-document hier alvast aan, zodra we alle gegevens hebben, en pas
+  // dáárna starten we het ophalen van berichten.
   useEffect(() => {
-    if (!db || !conversationId) return;
+    setConversationReady(false);
+    if (!db || !user || !profile || !otherId || !otherMember || !conversationId) return;
+    let cancelled = false;
+    setDoc(
+      doc(db, "conversations", conversationId),
+      {
+        participantIds: [user.uid, otherId],
+        participantNames: {
+          [user.uid]: profile.displayName,
+          [otherId]: otherMember.displayName,
+        },
+        participantPhotoURLs: {
+          [user.uid]: profile.photoURL ?? null,
+          [otherId]: otherMember.photoURL ?? null,
+        },
+      },
+      { merge: true }
+    )
+      .then(() => {
+        if (!cancelled) setConversationReady(true);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setMessagesError(
+            err instanceof Error ? err.message : "Gesprek kon niet worden geopend."
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    conversationId,
+    user?.uid,
+    profile?.displayName,
+    profile?.photoURL,
+    otherId,
+    otherMember?.displayName,
+    otherMember?.photoURL,
+  ]);
+
+  useEffect(() => {
+    setMessages(null);
+    setMessagesError(null);
+    if (!db || !conversationId || !conversationReady) return;
     const q = query(
       collection(db, "conversations", conversationId, "messages"),
       orderBy("createdAt", "asc")
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(
-        snapshot.docs.map((docSnap) => {
-          const data = docSnap.data();
-          return {
-            id: docSnap.id,
-            senderId: data.senderId,
-            text: data.text ?? "",
-            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
-          } as ChatMessage;
-        })
-      );
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setMessages(
+          snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              senderId: data.senderId,
+              text: data.text ?? "",
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+            } as ChatMessage;
+          })
+        );
+        setMessagesError(null);
+      },
+      () => {
+        setMessagesError("Kan berichten niet laden. Ververs de pagina en probeer het opnieuw.");
+      }
+    );
     return unsubscribe;
-  }, [conversationId]);
+  }, [conversationId, conversationReady]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -137,10 +197,13 @@ export default function GesprekPage() {
       </Link>
 
       <div className="flex-1 space-y-2 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3.5 shadow-sm">
-        {messages === null && (
+        {messagesError && (
+          <p className="py-6 text-center text-sm text-club-red">{messagesError}</p>
+        )}
+        {!messagesError && messages === null && (
           <p className="py-6 text-center text-sm text-gray-500">Laden...</p>
         )}
-        {messages?.length === 0 && (
+        {!messagesError && messages?.length === 0 && (
           <p className="py-6 text-center text-sm text-gray-500">
             Nog geen berichten. Zeg hallo!
           </p>
