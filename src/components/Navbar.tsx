@@ -13,6 +13,12 @@ export default function Navbar() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/sociaal-fonds", label: "Sociaal Fonds" },
+    ...(user
+      ? [
+          { href: "/leden", label: "Leden" },
+          { href: "/berichten", label: "Berichten" },
+        ]
+      : []),
     ...(profile?.role === "bestuur"
       ? [{ href: "/bestuur", label: "Bestuur" }]
       : []),
@@ -39,7 +45,9 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             {user && profile ? (
               <>
-                <Avatar name={profile.displayName} size={28} />
+                <Link href="/profiel" title="Mijn profiel">
+                  <Avatar name={profile.displayName} photoURL={profile.photoURL} size={28} />
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="text-xs font-medium text-gray-500 hover:text-club-red"

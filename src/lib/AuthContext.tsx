@@ -9,14 +9,11 @@ import {
 } from "react";
 import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
 import {
-  collection,
   doc,
-  getDocs,
-  limit,
+  getDoc,
   onSnapshot,
-  query,
   updateDoc,
-  where,
+  writeBatch,
 } from "firebase/firestore";
 import { auth, db, firebaseConfigError } from "./firebase";
 import { UserProfile } from "./types";
@@ -27,6 +24,7 @@ interface AuthContextValue {
   loading: boolean;
   logout: () => Promise<void>;
   configError: string | null;
+  refreshEmailVerified: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -35,6 +33,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   logout: async () => {},
   configError: null,
+  refreshEmailVerified: async () => false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -67,24 +66,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = snap.data() as UserProfile;
       setProfile(data);
 
+      // Mirror de e-mailverificatie-status van Firebase Auth naar Firestore,
+      // zodat het bestuur die kan zien bij het beoordelen van aanmeldingen
+      // (Firebase Auth geeft de verificatiestatus van andere gebruikers niet
+      // vrij aan client-code, dus we slaan een kopie op in het profiel).
+      if (user.emailVerified && !data.emailVerified && db) {
+        try {
+          await updateDoc(doc(db, "users", user.uid), { emailVerified: true });
+        } catch {
+          // niet kritiek, probeert het opnieuw bij de volgende snapshot
+        }
+      }
+
       // Bootstrap: zolang er nog geen enkel bestuurslid bestaat, wordt de
-      // eerste ingelogde gebruiker automatisch bestuurslid. Zo hoeft niemand
-      // ooit handmatig een rol in Firestore aan te passen om te beginnen.
+      // eerste ingelogde gebruiker automatisch bestuurslid én goedgekeurd.
+      // Zo hoeft niemand ooit handmatig in Firestore te klikken om te
+      // beginnen, en zit de oprichter niet zelf vast in de wachtrij. Het
+      // vlaggetje "meta/bootstrap" zorgt ervoor dat dit maar één keer kan
+      // gebeuren (zie firestore.rules) — daarna kan alleen het bestuur nog
+      // nieuwe bestuursleden aanwijzen.
       if (data.role !== "bestuur" && db) {
         try {
-          const bestuurQuery = query(
-            collection(db, "users"),
-            where("role", "==", "bestuur"),
-            limit(1)
-          );
-          const existing = await getDocs(bestuurQuery);
-          if (existing.empty) {
-            await updateDoc(doc(db, "users", user.uid), { role: "bestuur" });
+          const bootstrapSnap = await getDoc(doc(db, "meta", "bootstrap"));
+          if (!bootstrapSnap.exists() || bootstrapSnap.data()?.bestuurExists !== true) {
+            const batch = writeBatch(db);
+            batch.update(doc(db, "users", user.uid), {
+              role: "bestuur",
+              approved: true,
+            });
+            batch.set(doc(db, "meta", "bootstrap"), { bestuurExists: true });
+            await batch.commit();
           }
         } catch {
-          // Geen kritieke functionaliteit — als dit een keer faalt (bijv.
-          // door rules), blijft de gebruiker gewoon "lid" en kan een
-          // bestaand bestuurslid diegene alsnog promoveren via /bestuur.
+          // Geen kritieke functionaliteit — bij falen blijft de gebruiker
+          // gewoon "lid" en kan een bestaand bestuurslid diegene alsnog
+          // promoveren via /bestuur.
         }
       }
     });
@@ -95,9 +111,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (auth) await signOut(auth);
   }
 
+  async function refreshEmailVerified(): Promise<boolean> {
+    if (!auth?.currentUser || !db) return false;
+    await auth.currentUser.reload();
+    const verified = auth.currentUser.emailVerified;
+    if (verified) {
+      try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+          emailVerified: true,
+        });
+      } catch {
+        // negeer, onSnapshot pakt het bij volgende gelegenheid alsnog op
+      }
+    }
+    return verified;
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, logout, configError: firebaseConfigError }}
+      value={{
+        user,
+        profile,
+        loading,
+        logout,
+        configError: firebaseConfigError,
+        refreshEmailVerified,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -36,9 +36,16 @@ export default function PostCard({ post }: { post: FirestorePost }) {
     <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="mb-2.5 flex items-start justify-between">
         <div className="flex items-center gap-2.5">
-          <Avatar name={post.authorName} size={36} />
+          <Avatar name={post.authorName} photoURL={post.authorPhotoURL} size={36} />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{post.authorName}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-gray-900">{post.authorName}</p>
+              {post.postedAsBestuur && (
+                <span className="rounded-full bg-club-red/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-club-red">
+                  Bestuur
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500">
               {post.createdAt ? formatRelativeTime(post.createdAt) : "zojuist"}
             </p>

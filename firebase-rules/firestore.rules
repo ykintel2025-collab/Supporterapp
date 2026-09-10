@@ -2,13 +2,21 @@ rules_version = '2';
 
 // Plak dit bestand in: Firebase Console > Firestore Database > Rules > Publiceren.
 //
-// Logica:
-// - Iedereen (ook niet-ingelogd) mag de feed lezen.
-// - Alleen ingelogde gebruikers mogen posten, en alleen als zichzelf als auteur.
-// - Een post verwijderen/aanpassen mag de auteur zelf, of iemand met rol "bestuur".
-// - Het "users"-document (naam, e-mail, rol) mag je alleen zelf aanmaken en
-//   updaten, tenzij je bestuurslid bent (dan mag je ook andermans rol wijzigen
-//   via het Bestuur-dashboard).
+// Logica in het kort:
+// - "users": iedereen die is ingelogd mag alle profielen lezen (nodig voor de
+//   Feed, het ledenoverzicht en Bestuur-dashboard). Gewone leden mogen alleen
+//   hun eigen naam, bio, foto en e-mailverificatie bijwerken — NIET hun eigen
+//   rol of goedkeuringsstatus. Dat mag alleen het bestuur, behalve in de
+//   eenmalige opstartsituatie: zolang er nog geen enkel bestuurslid bestaat
+//   (bijgehouden in "meta/bootstrap"), mag de allereerste ingelogde
+//   gebruiker zichzelf bestuurslid + goedgekeurd maken. Daarna niet meer.
+// - "posts": iedereen mag gepubliceerde berichten lezen. Nieuwe berichten
+//   komen altijd binnen met status "pending" — alleen het bestuur mag die
+//   status naar "published" zetten (goedkeuren). De auteur of het bestuur
+//   mag een bericht verwijderen. Het aantal "vind ik leuk"s mag door elke
+//   ingelogde gebruiker aangepast worden (alleen dat veld).
+// - "conversations" + "messages": alleen de twee deelnemers van een gesprek
+//   mogen dat gesprek en de berichten daarin lezen en versturen.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,20 +31,96 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'bestuur';
     }
 
+    function bestuurExists() {
+      return exists(/databases/$(database)/documents/meta/bootstrap) &&
+        get(/databases/$(database)/documents/meta/bootstrap).data.bestuurExists == true;
+    }
+
+    function onlyAffects(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // Eenmalig opstartvlaggetje: wordt op "true" gezet zodra het eerste
+    // bestuurslid zichzelf promoveert. Voorkomt dat leden zich daarna nog
+    // zelf tot bestuur kunnen benoemen.
+    match /meta/bootstrap {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        !bestuurExists() &&
+        request.resource.data.bestuurExists == true;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && (request.auth.uid == userId || isBestuur());
-      allow delete: if false;
+
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+        request.resource.data.role == 'lid' &&
+        request.resource.data.approved == false;
+
+      // Bestuur mag alles aan een profiel wijzigen (bijv. goedkeuren, rol).
+      allow update: if isBestuur() ||
+        (
+          isSignedIn() && request.auth.uid == userId &&
+          (
+            // Gewoon profiel bijwerken (naam, bio, foto, e-mailverificatie):
+            // rol en goedkeuringsstatus blijven ongewijzigd.
+            (
+              onlyAffects(['displayName', 'bio', 'photoURL', 'emailVerified']) &&
+              request.resource.data.role == resource.data.role &&
+              request.resource.data.approved == resource.data.approved
+            )
+            ||
+            // Eenmalige zelf-promotie: alleen mogelijk zolang er nog geen
+            // enkel bestuurslid bestaat.
+            (
+              !bestuurExists() &&
+              request.resource.data.role == 'bestuur' &&
+              request.resource.data.approved == true
+            )
+          )
+        );
+
+      allow delete: if isBestuur();
     }
 
     match /posts/{postId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() &&
-        (resource.data.authorId == request.auth.uid || isBestuur());
+      allow read: if resource.data.status == 'published' || isBestuur() ||
+        (isSignedIn() && resource.data.authorId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        (request.resource.data.postedAsBestuur == false || isBestuur());
+
+      // Bestuur mag alles (goedkeuren = status wijzigen, modereren).
+      // Iedere ingelogde gebruiker mag alleen het "likes"-veld aanpassen.
+      allow update: if isBestuur() || (isSignedIn() && onlyAffects(['likes']));
+
       allow delete: if isSignedIn() &&
         (resource.data.authorId == request.auth.uid || isBestuur());
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+
+      allow create: if isSignedIn() &&
+        request.auth.uid in request.resource.data.participantIds &&
+        request.resource.data.participantIds.size() == 2;
+
+      allow update: if isSignedIn() &&
+        request.auth.uid in resource.data.participantIds &&
+        request.auth.uid in request.resource.data.participantIds;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+
+        allow create: if isSignedIn() &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+
+        allow update, delete: if false;
+      }
     }
   }
 }

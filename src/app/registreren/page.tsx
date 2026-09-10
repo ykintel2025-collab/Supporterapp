@@ -2,7 +2,11 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile,
+} from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
@@ -14,6 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -43,15 +48,41 @@ export default function RegisterPage() {
         displayName: name,
         email,
         role: "lid",
+        approved: false,
+        emailVerified: false,
+        bio: "",
+        photoURL: null,
         createdAt: serverTimestamp(),
       });
-      router.push("/");
+      await sendEmailVerification(credential.user);
+      setDone(true);
     } catch (err) {
       const code = (err as { code?: string })?.code;
       setError(translateFirebaseError(code));
     } finally {
       setLoading(false);
     }
+  }
+
+  if (done) {
+    return (
+      <div className="mx-auto max-w-sm rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+        <h1 className="mb-2 text-xl font-extrabold tracking-tight text-gray-900">
+          Bijna klaar!
+        </h1>
+        <p className="mb-4 text-sm text-gray-600">
+          We hebben een bevestigingsmail gestuurd naar <strong>{email}</strong>.
+          Klik op de link daarin om je e-mailadres te bevestigen. Daarna
+          beoordeelt het bestuur je aanmelding voordat je kunt posten.
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="rounded-full bg-club-red px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-club-red-dark"
+        >
+          Naar de Home Feed
+        </button>
+      </div>
+    );
   }
 
   return (

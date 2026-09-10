@@ -22,19 +22,26 @@ export default function Feed() {
       q,
       (snapshot) => {
         setPosts(
-          snapshot.docs.map((docSnap) => {
-            const data = docSnap.data();
-            return {
-              id: docSnap.id,
-              authorId: data.authorId,
-              authorName: data.authorName,
-              text: data.text ?? "",
-              mediaUrl: data.mediaUrl ?? null,
-              mediaType: data.mediaType ?? null,
-              likes: data.likes ?? [],
-              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
-            } as FirestorePost;
-          })
+          snapshot.docs
+            .map((docSnap) => {
+              const data = docSnap.data();
+              return {
+                id: docSnap.id,
+                authorId: data.authorId,
+                authorName: data.authorName,
+                authorPhotoURL: data.authorPhotoURL ?? null,
+                text: data.text ?? "",
+                mediaUrl: data.mediaUrl ?? null,
+                mediaType: data.mediaType ?? null,
+                likes: data.likes ?? [],
+                status: data.status ?? "published",
+                postedAsBestuur: data.postedAsBestuur ?? false,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+              } as FirestorePost;
+            })
+            // Gefilterd in de client (i.p.v. een Firestore where-query) zodat
+            // we geen samengestelde index nodig hebben voor status + datum.
+            .filter((post) => post.status === "published")
         );
         setError(null);
       },

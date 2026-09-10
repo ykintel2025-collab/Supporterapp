@@ -1,5 +1,6 @@
 import Feed from "@/components/Feed";
 import PostComposer from "@/components/PostComposer";
+import SociaalFondsWidget from "@/components/SociaalFondsWidget";
 
 export default function HomePage() {
   return (
@@ -8,6 +9,7 @@ export default function HomePage() {
       <p className="mb-4 text-sm text-gray-500">
         Deel updates, foto&apos;s en video&apos;s met de andere supporters.
       </p>
+      <SociaalFondsWidget />
       <PostComposer />
       <Feed />
     </div>
