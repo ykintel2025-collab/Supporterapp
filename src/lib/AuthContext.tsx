@@ -7,11 +7,17 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  sendEmailVerification,
+  signOut,
+  User as FirebaseUser,
+} from "firebase/auth";
 import {
   doc,
   getDoc,
   onSnapshot,
+  setDoc,
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
@@ -25,6 +31,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   configError: string | null;
   refreshEmailVerified: () => Promise<boolean>;
+  resendVerificationEmail: () => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -34,6 +41,7 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
   configError: null,
   refreshEmailVerified: async () => false,
+  resendVerificationEmail: async () => ({ ok: false, error: "Niet beschikbaar." }),
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -85,17 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // vlaggetje "meta/bootstrap" zorgt ervoor dat dit maar één keer kan
       // gebeuren (zie firestore.rules) — daarna kan alleen het bestuur nog
       // nieuwe bestuursleden aanwijzen.
-      if (data.role !== "bestuur" && db) {
+      if (db) {
         try {
           const bootstrapSnap = await getDoc(doc(db, "meta", "bootstrap"));
-          if (!bootstrapSnap.exists() || bootstrapSnap.data()?.bestuurExists !== true) {
-            const batch = writeBatch(db);
-            batch.update(doc(db, "users", user.uid), {
-              role: "bestuur",
-              approved: true,
-            });
-            batch.set(doc(db, "meta", "bootstrap"), { bestuurExists: true });
-            await batch.commit();
+          const flagOntbreekt =
+            !bootstrapSnap.exists() || bootstrapSnap.data()?.bestuurExists !== true;
+          if (flagOntbreekt) {
+            if (data.role === "bestuur") {
+              // Bestond al vóór dit vlaggetje bestond (bijv. een eerdere
+              // versie van de app): zet het alsnog, zodat vanaf nu niemand
+              // anders zichzelf nog stiekem bestuurslid kan maken.
+              await setDoc(doc(db, "meta", "bootstrap"), { bestuurExists: true });
+            } else {
+              const batch = writeBatch(db);
+              batch.update(doc(db, "users", user.uid), {
+                role: "bestuur",
+                approved: true,
+              });
+              batch.set(doc(db, "meta", "bootstrap"), { bestuurExists: true });
+              await batch.commit();
+            }
           }
         } catch {
           // Geen kritieke functionaliteit — bij falen blijft de gebruiker
@@ -127,6 +144,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return verified;
   }
 
+  async function resendVerificationEmail(): Promise<{ ok: boolean; error?: string }> {
+    if (!auth?.currentUser) {
+      return { ok: false, error: "Niet ingelogd." };
+    }
+    try {
+      await sendEmailVerification(auth.currentUser);
+      return { ok: true };
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/too-many-requests") {
+        return {
+          ok: false,
+          error:
+            "Net al een mail gestuurd — wacht een minuutje voordat je het opnieuw probeert.",
+        };
+      }
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : "Versturen mislukt.",
+      };
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -136,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         configError: firebaseConfigError,
         refreshEmailVerified,
+        resendVerificationEmail,
       }}
     >
       {children}

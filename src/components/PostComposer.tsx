@@ -8,13 +8,15 @@ import { useAuth } from "@/lib/AuthContext";
 import Avatar from "./Avatar";
 
 export default function PostComposer() {
-  const { user, profile, refreshEmailVerified } = useAuth();
+  const { user, profile, refreshEmailVerified, resendVerificationEmail } = useAuth();
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [postAsBestuur, setPostAsBestuur] = useState(false);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingVerified, setCheckingVerified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user || !profile) {
@@ -37,6 +39,17 @@ export default function PostComposer() {
         setError("Nog niet bevestigd — check je inbox (en spamfolder).");
       }
     }
+    async function handleResend() {
+      setResending(true);
+      setResendMessage(null);
+      const result = await resendVerificationEmail();
+      setResending(false);
+      setResendMessage(
+        result.ok
+          ? "Mail opnieuw verstuurd — check je inbox (en spamfolder)."
+          : result.error ?? "Versturen mislukt."
+      );
+    }
     return (
       <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm">
         <p className="mb-2">
@@ -44,13 +57,23 @@ export default function PostComposer() {
           <strong>{profile.email}</strong>.
         </p>
         {error && <p className="mb-2 text-xs text-club-red">{error}</p>}
-        <button
-          onClick={handleCheckVerified}
-          disabled={checkingVerified}
-          className="rounded-full bg-club-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-club-red-dark disabled:opacity-50"
-        >
-          {checkingVerified ? "Controleren..." : "Ik heb bevestigd, vernieuw"}
-        </button>
+        {resendMessage && <p className="mb-2 text-xs text-gray-500">{resendMessage}</p>}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleCheckVerified}
+            disabled={checkingVerified}
+            className="rounded-full bg-club-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-club-red-dark disabled:opacity-50"
+          >
+            {checkingVerified ? "Controleren..." : "Ik heb bevestigd, vernieuw"}
+          </button>
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+          >
+            {resending ? "Versturen..." : "Mail opnieuw versturen"}
+          </button>
+        </div>
       </div>
     );
   }

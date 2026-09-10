@@ -19,6 +19,8 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -64,6 +66,25 @@ export default function RegisterPage() {
     }
   }
 
+  async function handleResend() {
+    if (!auth?.currentUser) return;
+    setResending(true);
+    setResendMessage(null);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setResendMessage("Mail opnieuw verstuurd — check je inbox (en spamfolder).");
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      setResendMessage(
+        code === "auth/too-many-requests"
+          ? "Net al een mail gestuurd — wacht een minuutje voordat je het opnieuw probeert."
+          : "Versturen mislukt. Probeer het straks nog eens."
+      );
+    } finally {
+      setResending(false);
+    }
+  }
+
   if (done) {
     return (
       <div className="mx-auto max-w-sm rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
@@ -72,15 +93,28 @@ export default function RegisterPage() {
         </h1>
         <p className="mb-4 text-sm text-gray-600">
           We hebben een bevestigingsmail gestuurd naar <strong>{email}</strong>.
-          Klik op de link daarin om je e-mailadres te bevestigen. Daarna
-          beoordeelt het bestuur je aanmelding voordat je kunt posten.
+          Klik op de link daarin om je e-mailadres te bevestigen (check ook je
+          spamfolder). Daarna beoordeelt het bestuur je aanmelding voordat je
+          kunt posten.
         </p>
-        <button
-          onClick={() => router.push("/")}
-          className="rounded-full bg-club-red px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-club-red-dark"
-        >
-          Naar de Home Feed
-        </button>
+        {resendMessage && (
+          <p className="mb-4 text-xs text-gray-500">{resendMessage}</p>
+        )}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={() => router.push("/")}
+            className="rounded-full bg-club-red px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-club-red-dark"
+          >
+            Naar de Home Feed
+          </button>
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="text-xs font-medium text-gray-500 underline hover:text-club-red disabled:opacity-50"
+          >
+            {resending ? "Versturen..." : "Geen mail ontvangen? Opnieuw versturen"}
+          </button>
+        </div>
       </div>
     );
   }
