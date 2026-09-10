@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const links = [
     { href: "/", label: "Home" },
-    { href: "/sociaal-fonds", label: "Sociaal Fonds" },
+    { href: "/voor-elkaar", label: "Voor Elkaar" },
     ...(user
       ? [
           { href: "/leden", label: "Leden" },

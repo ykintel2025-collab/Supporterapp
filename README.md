@@ -9,13 +9,15 @@ geen creditcard nodig.
 ## Wat is er nieuw in deze versie
 
 Dit is de grote uitbreiding: goedkeuring van leden en berichten,
-e-mailverificatie, een volwaardig bestuur-dashboard, het Sociaal Fonds
-geïntegreerd op de homepage, ledenprofielen met een ledenoverzicht, en
-onderlinge privéberichten.
+e-mailverificatie, een volwaardig bestuur-dashboard, "Voor Elkaar" (het
+voormalige Sociaal Fonds) vast bovenaan de homepage, ledenprofielen met een
+ledenoverzicht, en onderlinge privéberichten.
 
 - **E-mailverificatie**: bij registratie sturen we automatisch een
-  bevestigingsmail (via Firebase Auth). Een lid kan pas door het bestuur
-  goedgekeurd worden nadat de e-mail bevestigd is.
+  bevestigingsmail (via Firebase Auth). Het bestuur ziet bij elke
+  aanmelding of de e-mail al bevestigd is, als hulpmiddel — goedkeuren kan
+  het bestuur altijd, ook als de e-mail nog niet bevestigd is (bijvoorbeeld
+  omdat je iemand persoonlijk kent en zeker weet dat het goed zit).
 - **Ledengoedkeuring**: nieuwe leden kunnen inloggen, maar kunnen pas iets
   posten nadat het bestuur ze heeft goedgekeurd. Zolang dat niet is gebeurd,
   ziet het lid een duidelijke statusmelding in plaats van het plaatsformulier.
@@ -24,7 +26,8 @@ onderlinge privéberichten.
   bestuur het goedkeurt, verschijnt het voor iedereen.
 - **Compleet bestuur-dashboard** (`/bestuur`) met drie tabbladen:
   - **Aanmeldingen** — nieuwe leden goedkeuren of afwijzen (met zichtbare
-    e-mailverificatiestatus; goedkeuren kan pas ná verificatie).
+    e-mailverificatiestatus, met goedkeuren/afwijzen — bevestiging is een
+    hulpmiddel, geen harde eis).
   - **Berichten** — de wachtrij met nog te beoordelen posts, inclusief
     media-voorbeeld, met goedkeuren/afwijzen.
   - **Leden** — alle goedgekeurde leden, met de mogelijkheid iemand
@@ -38,11 +41,16 @@ onderlinge privéberichten.
   "Bestuur"-badge naast de eigen naam. Zo blijft altijd zichtbaar wíe er
   namens het bestuur spreekt, en kunnen meerdere mensen samen het bestuur
   vormen zonder wachtwoorden te hoeven delen.
-- **Sociaal Fonds op de homepage**: bovenaan de Home Feed staat nu een
-  compacte samenvatting (opgehaald bedrag, voortgangsbalk, actieve actie)
-  die doorlinkt naar de volledige pagina `/sociaal-fonds`. Zo is meteen
-  duidelijk dat de community van donaties afhankelijk is, zonder dat het
-  een geïsoleerde, makkelijk te missen pagina blijft.
+- **"Voor Elkaar" (voorheen Sociaal Fonds), vastgeplakt bovenaan de
+  homepage**: het onderdeel heeft een nieuwe naam gekregen die past bij het
+  doel — elkaar helpen, er voor elkaar zijn — en staat niet meer op een
+  aparte, makkelijk te missen pagina. In plaats daarvan blijft het als
+  balk vastgeplakt (sticky) bovenaan de Home Feed, met het totaalbedrag en
+  een voortgangsbalk. Een klik op de balk klapt een dropdown open met alle
+  lopende acties en hun individuele voortgang, direct in de feed — geen
+  aparte pagina meer nodig om te zien waar de donaties naartoe gaan. De
+  volledige pagina blijft ook bestaan op `/voor-elkaar` voor wie liever
+  even goed leest.
 - **Ledenprofielen** (`/profiel` om je eigen profiel te bewerken: naam, "over
   mij" en een profielfoto) en een **ledenoverzicht** (`/leden`, met een
   profielpagina per lid op `/leden/[id]`) — zo vindt de community elkaar
@@ -91,8 +99,9 @@ bestaand bestuurslid.
 3. Terug in de app klikt diegene op "Ik heb bevestigd, vernieuw" (te zien
    zodra je iets probeert te posten zonder bevestigde e-mail).
 4. Het bestuur ziet de aanmelding in **Bestuur → Aanmeldingen**, mét de
-   status van de e-mailverificatie, en klikt op **Goedkeuren** (kan pas na
-   verificatie) of **Afwijzen**.
+   status van de e-mailverificatie, en klikt op **Goedkeuren** of
+   **Afwijzen** — bevestiging is zichtbaar als hulpmiddel, maar hoeft niet
+   afgewacht te worden.
 5. Pas na goedkeuring kan het lid daadwerkelijk iets posten. Elk bericht
    komt vervolgens nog een keer in de wachtrij terecht op **Bestuur →
    Berichten**, voor die laatste controle voordat het zichtbaar wordt voor
@@ -201,12 +210,12 @@ draait:
 1. **Betaalprovider kiezen** (bijv. Stripe of Mollie — Mollie is populair
    in Nederland en ondersteunt iDEAL rechtstreeks).
 2. **Producten/lidmaatschappen** vastleggen in Firestore (naam, prijs,
-   voorraad indien van toepassing), en de donatiedoelen van het Sociaal
-   Fonds (nu nog voorbeelddata) vervangen door een echte Firestore-collectie
-   die het bestuur zelf kan beheren.
+   voorraad indien van toepassing), en de donatiedoelen van "Voor Elkaar"
+   (nu nog voorbeelddata) vervangen door een echte Firestore-collectie die
+   het bestuur zelf kan beheren.
 3. **Checkout-flow** bouwen die via de provider een betaling start en het
    resultaat terugkoppelt (webhook) naar Firestore, bijvoorbeeld om een
-   lidmaatschap te activeren of een donatie aan een Sociaal Fonds-doel toe
+   lidmaatschap te activeren of een donatie aan een "Voor Elkaar"-actie toe
    te voegen.
 4. **Media echt verwijderen bij het weghalen van een post** — vereist een
    kleine backend-functie (bijv. een Vercel API route) die met je

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Amsterdams Supporters Fonds",
   description:
-    "Community-app van het Amsterdams Supporters Fonds: deel updates, foto's en video's, steun het Sociaal Fonds.",
+    "Community-app van het Amsterdams Supporters Fonds: deel updates, foto's en video's, steun elkaar via Voor Elkaar.",
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon-192.png",

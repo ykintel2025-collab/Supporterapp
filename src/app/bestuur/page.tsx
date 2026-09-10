@@ -211,13 +211,12 @@ export default function BestuurPage() {
                 </button>
                 <button
                   onClick={() => approveMember(member.id)}
-                  disabled={!member.emailVerified}
                   title={
                     member.emailVerified
                       ? undefined
-                      : "Kan pas goedgekeurd worden als de e-mail is bevestigd"
+                      : "E-mail is nog niet bevestigd — je kunt alsnog goedkeuren als je de aanmelding vertrouwt"
                   }
-                  className="rounded-full bg-club-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-club-red-dark disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-full bg-club-red px-3 py-1.5 text-xs font-semibold text-white hover:bg-club-red-dark"
                 >
                   Goedkeuren
                 </button>

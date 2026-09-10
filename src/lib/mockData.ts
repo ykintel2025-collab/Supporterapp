@@ -1,6 +1,7 @@
 import { DonationGoal } from "./types";
 
-// Voorbeelddata voor het Sociaal Fonds. De feed op de homepage gebruikt
+// Voorbeelddata voor "Voor Elkaar" (voorheen het Sociaal Fonds). De feed op
+// de homepage gebruikt
 // inmiddels echte Firestore-data (zie src/components/Feed.tsx) — dit
 // bestand is nu alleen nog voor de donatiedoelen. Vervang dit later door
 // een Firestore-collectie zodra jullie dat willen (zie README, Fase 2).
